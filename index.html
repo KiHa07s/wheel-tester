@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wheel Tester 鼠标滚轮测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", system-ui, sans-serif;
+        }
+
+        body {
+            /* 严格限制在视口大小，并隐藏超出的部分 */
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 40px 50px;
+            /* 内边距 */
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            /* 整体宽度 */
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 25px;
+            font-size: 26px;
+        }
+
+        .stats-container {
+            margin-bottom: 20px;
+        }
+
+        .item {
+            font-size: 17px;
+            margin: 12px 0;
+            color: #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .num {
+            font-size: 22px;
+            font-weight: bold;
+            color: #216ce7;
+        }
+
+        /* 日志容器样式 */
+        .log-container {
+            background: #fafafa;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            height: 300px;
+            /* 加大日志容器高度，显示更多行 */
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            text-align: left;
+            scroll-behavior: smooth;
+        }
+
+        .log-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .log-container::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        /* 单条日志样式 */
+        .log-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-bottom: 1px dashed #eee;
+            font-size: 15px;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-index {
+            color: #999;
+            width: 50px;
+        }
+
+        .log-dir.up {
+            color: #52c41a;
+            font-weight: bold;
+        }
+
+        .log-dir.down {
+            color: #f5222d;
+            font-weight: bold;
+        }
+
+        .log-val {
+            font-family: monospace;
+            font-size: 16px;
+            width: 55px;
+            text-align: right;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tip {
+            margin-bottom: 18px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        #resetBtn {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            background: #216ce7;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        #resetBtn:hover {
+            background: #185bcd;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>鼠标滚轮测试</h1>
+
+        <div class="stats-container">
+            <div class="item">单次滚动值：<span class="num" id="current">0</span></div>
+            <div class="item">向上总距离：<span class="num" id="upTotal">0</span></div>
+            <div class="item">向下总距离：<span class="num" id="downTotal">0</span></div>
+        </div>
+
+        <div class="log-container" id="logBox">
+        </div>
+
+        <p class="tip">滑动鼠标滚轮进行测试</p>
+        <button id="resetBtn">重置数据</button>
+    </div>
+
+    <script>
+        const currentEl = document.getElementById('current');
+        const upEl = document.getElementById('upTotal');
+        const downEl = document.getElementById('downTotal');
+        const resetBtn = document.getElementById('resetBtn');
+        const logBox = document.getElementById('logBox');
+
+        let upTotal = 0;
+        let downTotal = 0;
+        let scrollCount = 0;
+
+        // 监听滚轮事件
+        document.addEventListener('wheel', e => {
+            const deltaY = e.deltaY;
+
+            // 更新当前单次滚动数值
+            currentEl.textContent = deltaY;
+
+            // 区分上下滚动并累加
+            const isUp = deltaY < 0;
+            if (isUp) {
+                upTotal += Math.abs(deltaY);
+            } else {
+                downTotal += deltaY;
+            }
+
+            // 刷新页面显示
+            upEl.textContent = upTotal;
+            downEl.textContent = downTotal;
+
+            // 记录到列表
+            scrollCount++;
+            addLogItem(scrollCount, isUp, deltaY);
+        });
+
+        // 动态添加日志条目的函数
+        function addLogItem(index, isUp, value) {
+            const logEl = document.createElement('div');
+            logEl.className = 'log-item';
+
+            const directionText = isUp ? '向上 ▲' : '向下 ▼';
+            const colorClass = isUp ? 'up' : 'down';
+
+            logEl.innerHTML = `
+                <span class="log-index">#${index}</span>
+                <span class="log-dir ${colorClass}">${directionText}</span>
+                <span class="log-val">${value > 0 ? '+' : ''}${value}</span>
+            `;
+
+            // 追加到容器末尾
+            logBox.appendChild(logEl);
+
+            // 自动滚动到底部，显示最新记录
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // 重置按钮逻辑
+        resetBtn.addEventListener('click', () => {
+            upTotal = 0;
+            downTotal = 0;
+            scrollCount = 0;
+
+            currentEl.textContent = '0';
+            upEl.textContent = '0';
+            downEl.textContent = '0';
+
+            // 清空日志列表
+            logBox.innerHTML = '';
+        });
+    </script>
+</body>
+
+</html>
